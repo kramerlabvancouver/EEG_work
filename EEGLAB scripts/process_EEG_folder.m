@@ -1,4 +1,16 @@
-%A function to cheat being good code: 
+%A script that uses EEGLAB's computational engine to process .set files.
+% Processing includes: 
+% 1. Importing Events from Digi
+% 2. Importing electrode Locations from file
+% 3. Filtering highpass (0.5 Hz), lowpass (40 Hz)
+% 4. Epoching based on events
+% 5. Rereferencing to average
+% 6. Displaying Topoplot of the epoch average for each electrode
+% 7. Saves (overwrites) the files in the folder where they are located. 
+% Inputs: pathname - the directory location of the folder holding the .set
+% and .fdt files you want to process. Eg. 'Z:\19_Carson_Berry\EEG':
+% Outputs: Saved files, topoplots. 
+% Files to be check manually for noise after processing and before ICA. 
 
 function process_EEG_folder(pathname)
 
@@ -42,7 +54,14 @@ filename_list=deblank(char(filename_cell_list));
                   EEG = pop_chanedit(EEG, 'load',{'Z:\19_Carson_Berry\EEG\MATLAB\trunk\src\cap locations\31_channel_locs_missing_F3.ced' 'filetype' 'autodetect'}); %if this program is being run on a MAC- this location file path will need to use \\ instead of \
                   EEG = eeg_checkset( EEG );
               else
-                  fprintf('Error: unknown number of channels (%i) in %s', EEG.nbchan, filename);
+                  if(EEG.nbchan==32)
+                      EEG = pop_chanedit(EEG, 'load',{'Z:\19_Carson_Berry\EEG\MATLAB\trunk\src\cap locations\32_channel_locs_noice.ced' 'filetype' 'autodetect'}); %if this program is being run on a MAC- this location file path will need to use \\ instead of \
+                      EEG = eeg_checkset( EEG );                    
+                  else
+                      fprintf('Error: unknown number of channels (%i) in %s', EEG.nbchan, filename);
+                      EEG=pop_chanedit(EEG, 'lookup','C:\\Program Files\\MATLAB\\R2015b\\toolbox\\eeglab14_1_1b\\plugins\\dipfit2.3\\standard_BESA\\standard-10-5-cap385.elp');
+
+                  end
               end
           end
           EEG = pop_eegfiltnew(EEG, [],0.5,26400,1,[],0); %highpass filter from 0.5 Hz upwards
@@ -70,9 +89,6 @@ filename_list=deblank(char(filename_cell_list));
           
           figure; pop_plottopo(EEG, [1:EEG.nbchan] , strcat(filename_text, '_epoched_rereferenced'), 0, 'ydir',1); %plot topomap of all the electrodes
           
-          %Runica
-          EEG = pop_runica(EEG, 'extended',1,'interupt','on');
-          EEG = eeg_checkset( EEG );
           
           %save
           EEG = pop_saveset( EEG, 'filename',filename_text,'filepath', pathname);
