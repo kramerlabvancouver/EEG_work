@@ -1,3 +1,7 @@
+%A function to cheat being good code: 
+
+function get_events_and_locs(pathname)
+
 %A script that uses EEGLAB's computational engine to process .set files.
 % Processing includes: 
 % 1. Importing Events from Digi
@@ -11,8 +15,6 @@
 % and .fdt files you want to process. Eg. 'Z:\19_Carson_Berry\EEG':
 % Outputs: Saved files, topoplots. 
 % Files to be check manually for noise after processing and before ICA. 
-
-function process_EEG_folder(pathname)
 
 file_struct_list = dir([pathname filesep() '*.set']);  %% get list of .set files in the pathname specified
 
@@ -45,67 +47,46 @@ filename_list=deblank(char(filename_cell_list));
           EEG = pop_select( EEG,'nochannel',{'Digi' 'Saw'});  %remove digi and saw channels
           EEG.setname = strcat(filename_text, '_no_digi');          %sets name to filename with '_no_digi' appended to end
           EEG = eeg_checkset( EEG );
-          
-          try
-              fprintf('Looking up (%i) channels in %s', EEG.nbchan, filename);
-              mroot=matlabroot; %get matlab root
-              EEG=pop_chanedit(EEG, 'lookup',[mroot '\\toolbox\\eeglab14_1_1b\\plugins\\dipfit2.3\\standard_BESA\\standard-10-5-cap385.elp']); % get cap locations from matlabroot folder
+          %this line will work on any kramer computer networked to the z: drive.
+          if(EEG.nbchan==29)
+              EEG = pop_chanedit(EEG, 'load',{'Z:\19_Carson_Berry\EEG\MATLAB\trunk\src\cap locations\29 channel, missing f3, m1, m2.ced' 'filetype' 'autodetect'}); %if this program is being run on a MAC- this location file path will need to use \\ instead of \
               EEG = eeg_checkset( EEG );
-              
-          catch
-               warning('EEG channel names not provided. Looking up from archive electrode location files.');
-              %this line will work on any kramer computer networked to the z: drive.
-              if(EEG.nbchan==29)
-                  EEG = pop_chanedit(EEG, 'load',{'Z:\19_Carson_Berry\EEG\MATLAB\trunk\src\cap locations\29 channel, missing f3, m1, m2.ced' 'filetype' 'autodetect'}); %if this program is being run on a MAC- this location file path will need to use \\ instead of \
+          else
+              if(EEG.nbchan==31)
+                  EEG = pop_chanedit(EEG, 'load',{'Z:\19_Carson_Berry\EEG\MATLAB\trunk\src\cap locations\31_channel_locs_missing_F3.ced' 'filetype' 'autodetect'}); %if this program is being run on a MAC- this location file path will need to use \\ instead of \
                   EEG = eeg_checkset( EEG );
               else
-                  if(EEG.nbchan==31)
-                      EEG = pop_chanedit(EEG, 'load',{'Z:\19_Carson_Berry\EEG\MATLAB\trunk\src\cap locations\31_channel_locs_missing_F3.ced' 'filetype' 'autodetect'}); %if this program is being run on a MAC- this location file path will need to use \\ instead of \
-                      EEG = eeg_checkset( EEG );
+                  if(EEG.nbchan==32)
+                      EEG = pop_chanedit(EEG, 'load',{'Z:\19_Carson_Berry\EEG\MATLAB\trunk\src\cap locations\32_channel_locs_noice.ced' 'filetype' 'autodetect'}); %if this program is being run on a MAC- this location file path will need to use \\ instead of \
+                      EEG = eeg_checkset( EEG );                    
                   else
-                      if(EEG.nbchan==32)
-                          EEG = pop_chanedit(EEG, 'load',{'Z:\19_Carson_Berry\EEG\MATLAB\trunk\src\cap locations\32_channel_locs_noice.ced' 'filetype' 'autodetect'}); %if this program is being run on a MAC- this location file path will need to use \\ instead of \
-                          EEG = eeg_checkset( EEG );
-                      else
-                      end
+                      fprintf('Error: unknown number of channels (%i) in %s', EEG.nbchan, filename);
+                      EEG=pop_chanedit(EEG, 'lookup','C:\\Program Files\\MATLAB\\R2015b\\toolbox\\eeglab14_1_1b\\plugins\\dipfit2.3\\standard_BESA\\standard-10-5-cap385.elp');
+
                   end
               end
           end
           
-          EEG = pop_eegfiltnew(EEG, [],1,26400,1,[],0); %highpass filter from 0.5 Hz upwards
-          %EEG.setname=strcat(filename_text,'_highpass');
-          EEG = eeg_checkset( EEG );
-          
-          EEG = pop_eegfiltnew(EEG, [],40,1056,0,[],0); %lowpass filter at 40 Hz (cutoff at 45 Hz)
-          EEG = eeg_checkset( EEG );
-          
-          EEG = eeg_checkset( EEG );
-          %EEG = pop_saveset( EEG, 'filename',filename_text,'filepath',pathname);
-          
-          EEG = pop_select( EEG,'nochannel',{'p8'});    %remove p8 cuz it's noisy.
-          EEG = eeg_checkset( EEG );
-          
-          
-          EEG = pop_epoch( EEG, {  Event_chan  }, [-1  2], 'newname', strcat(filename_text,'_epoched'), 'epochinfo', 'yes');
-          EEG = eeg_checkset( EEG );
-          
-          EEG = pop_rmbase( EEG, [-1000     0]);
-          
-          EEG = pop_reref( EEG, []);
-          EEG.setname=strcat(filename_text,'_reref');
-          
-          
           figure; pop_plottopo(EEG, [1:EEG.nbchan] , strcat(filename_text, '_epoched_rereferenced'), 0, 'ydir',1); %plot topomap of all the electrodes
           
           
-          %save
+          %%PREP_pipeline
+          %resample to 1000 Hz
+          EEG = pop_resample( EEG, 1000);
+          EEG = pop_prepPipeline(EEG, struct('detrendChannels', 1:EEG.nbchan, 'detrendCutoff', 1, 'detrendStepSize', 0.02, 'detrendType', 'High Pass', 'lineNoiseChannels', 1:EEG.nbchan, 'lineFrequencies', 60:60:480, 'Fs', 1000, 'p', 0.01, 'fScanBandWidth', 2, 'taperBandWidth', 2, 'taperWindowSize', 4, 'pad', 0, 'taperWindowStep', 1, 'fPassBand', [0  500], 'tau', 100, 'maximumIterations', 10));
+          
+          %%Filter again
+          EEG = pop_eegfiltnew(EEG, [],1,26400,1,[],0); %highpass filter from 1 Hz upwards
+                  
+          %%Epoch data
+          EEG = pop_epoch( EEG, {  Event_chan  }, [-1  2], 'newname', [filename_text '_PREPd' '_epoched'], 'epochinfo', 'yes');
+          EEG = pop_rmbase( EEG, [-1000     0]);
+          
+          %% save
           EEG = pop_saveset( EEG, 'filename',filename_text,'filepath', pathname);
           EEG = eeg_checkset( EEG );
           [ALLEEG EEG] = eeg_store(ALLEEG, EEG, CURRENTSET);
           eeglab redraw;
-         
-            fprintf('\n\n\n %i percent done ICA-ing folder \n\n\n',k/length_filename(1)*100);   
-          
           
       end
       

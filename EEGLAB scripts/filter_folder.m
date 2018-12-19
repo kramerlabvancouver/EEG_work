@@ -1,23 +1,19 @@
-function fz_reference( pathname)
-%REREFERENCE_FOLDER A function that rereferences all of the .set EEGLAB
-%files to the channels denoted by the objects found in the reference_set input 
+function filter_folder(pathname)
+%a function to filter oscar's IB vs NB data... It hasn't been filtered yet.
 
-%   Inputs: 
-%       pathname- the system location of the folder containing the files
-%       you wish to rereference 
-%       
-%      
 
-%% Get files of type '.set'
+
 file_struct_list = dir([pathname filesep() '*.set']);  %% get list of .set files in the pathname specified
-filename_cell_list = {file_struct_list.name};  %% extract the filenames into a cellarray
-filename_list=deblank(char(filename_cell_list));
-length_filename=size(filename_list);
 
-%%Start up EEGLAB
-[ALLEEG EEG CURRENTSET ALLCOM] = eeglab;  
+filename_cell_list = {file_struct_list.name};  %% extract the filenames into a cellarray
+
+filename_list=deblank(char(filename_cell_list));
+
+    length_filename=size(filename_list);
+      [ALLEEG EEG CURRENTSET ALLCOM] = eeglab;  
       
-%iterate through files
+      
+      
       for k=1:length_filename(1)
           %subject = file_struct_list.name  %% this iterates over the elements of the cell array, one-by-one, setting the `filename` variable like a loop variable
           
@@ -30,31 +26,18 @@ length_filename=size(filename_list);
           EEG = pop_loadset('filename',filename,'filepath',pathname); %loads the specified file into eeglab
           
           [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, CURRENTSET);
-          EEG = eeg_checkset( EEG );
           
           
-          % To plot the N1 latencies we will rereference to FZ
-          chan_labels = {EEG.chanlocs.labels}.'; %make a simple cell array out of the cell array within the EEG.chanlocs struct
-          FZ_index= find(strcmpi(chan_labels, char('FZ'))); %(case insensitive) compare strings to the electrode name we want (FZ).
-          
-          
-          %rereference to FZ
-          EEG = pop_reref( EEG, FZ_index,'keepref','on');
+          %filter data
+          EEG = pop_eegfiltnew(EEG, [],1,26400,1,[],0);
           [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 1,'overwrite','on','gui','off');
-          EEG = eeg_checkset( EEG );
-          EEG.setname=strcat(filename_text,'_FZ_ref');
+          EEG = pop_eegfiltnew(EEG, [],40,1056,0,[],0);
+          [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 1,'overwrite','on','gui','off');
           
-          %save
+          %save data
           EEG = pop_saveset( EEG, 'filename',filename_text,'filepath', pathname);
           EEG = eeg_checkset( EEG );
-          [ALLEEG EEG] = eeg_store(ALLEEG, EEG, CURRENTSET);
+          [ALLEEG EEG] = eeg_store(ALLEEG, EEG, CURRENTSET); %copy changes to alleeg
           eeglab redraw;
-          
       end
-      
-      fprintf('All done rereferencing!');
 end
-
-
-
-

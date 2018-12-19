@@ -6,13 +6,13 @@
 
 
 
-[STUDY ALLEEG] = pop_loadstudy('filename', 'CvL_mas_ref.study', 'filepath', 'Z:\19_Carson_Berry\Study Data\Edited\clean\Ear_ref');
+[STUDY ALLEEG] = pop_loadstudy('filename', 'CvL_mas_ref_good.study', 'filepath', 'Z:\19_Carson_Berry\Study Data\Edited\clean\Ear_ref');
 CURRENTSTUDY = 1; EEG = ALLEEG; CURRENTSET = [1:length(EEG)];
 
 ALLEEG_mast = ALLEEG;
 EEG_mast = EEG;
 
-[STUDY ALLEEG] = pop_loadstudy('filename', 'CvL_fz_study.study', 'filepath', 'Z:\19_Carson_Berry\Study Data\Edited\clean\FZ_ref');
+[STUDY ALLEEG] = pop_loadstudy('filename', 'CvL_fz_study_good.study', 'filepath', 'Z:\19_Carson_Berry\Study Data\Edited\clean\FZ_ref');
 CURRENTSTUDY = 1; EEG = ALLEEG; CURRENTSET = [1:length(EEG)];
 
 
@@ -40,9 +40,9 @@ time_index_end = find(EEG(1).times == 1000); %find the end
         h = figure;
         suptitle (ALLEEG_mast(1,i).setname);
         subplot(18,1,[1 2 3]);
-        pop_erpimage(ALLEEG_mast(1,i),1, [CZ_index],[[]],'Cz',10,1,{},[],'' ,'yerplabel','\muV','erp','on','limits',[0 1000 NaN NaN NaN NaN NaN NaN] ,'cbar','on');
+        pop_erpimage(ALLEEG_mast(1,i),1, [CZ_index],[[]],'Cz',10,1,{},[],'' ,'yerplabel','\muV','erp','on','limits',[-250 1000 NaN NaN NaN NaN NaN NaN] ,'cbar','on');
         subplot(18,1,[9 10 11]);
-        pop_erpimage(ALLEEG_Fz(1,i),1, [C3_index],[[]],'C3',10,1,{},[],'' ,'yerplabel','\muV','erp','on','limits',[0 1000 NaN NaN NaN NaN NaN NaN] ,'cbar','on');
+        pop_erpimage(ALLEEG_Fz(1,i),1, [C3_index],[[]],'C3',10,1,{},[],'' ,'yerplabel','\muV','erp','on','limits',[-250 1000 NaN NaN NaN NaN NaN NaN] ,'cbar','on');
         hold on;
         xlabel('Time(ms)');
         display('...done');

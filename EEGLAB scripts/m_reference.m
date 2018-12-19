@@ -31,7 +31,7 @@ avg_count=0; %init avg_count that counts the instances where both mastoids are n
           EEG.etc.eeglabvers = '14.1.1'; % this tracks which version of EEGLAB is being used, you may ignore it
           EEG = pop_loadset('filename',filename,'filepath',pathname); %loads the specified file into eeglab
           
-          [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, CURRENTSET, 'setname', 'raw');
+          [ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, CURRENTSET);
           EEG = eeg_checkset( EEG );
           
           

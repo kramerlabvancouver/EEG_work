@@ -1,0 +1,304 @@
+%A script to check component activity and correlation with pain NRS
+
+%participant, Condition, Component.
+N1_P1_matrix=   [19, 4, 17;...
+    16, 1, 4;...
+  %  20, 2, 2;...
+    17, 2, 4; ...
+  %  15, 2, 6; ...
+    13, 2, 2; ...
+    12, 3, 3; ...
+    15, 3, 4; ...
+    10, 4, 10;...
+    13, 1, 4;...
+    11, 4, 6;...
+  %  10, 1, 2;...
+    7, 4, 9;...
+   % 7, 1, 8;...
+    5, 2, 1;...
+    5, 4, 3;...
+  %  4, 1, 4;...
+    3, 3, 4;...
+    1, 2, 5;...
+    1, 1, 6;...
+    1, 3, 5];
+
+p1_max_comp=max_comp;
+
+for i=1:length(ALLEEG)
+    
+    temp1=char([uint8(ALLEEG(i).subject)]); temp1=str2num(temp1(2:end) );
+    ALLEEG(i).subnum=temp1;
+    if(strcmp(p1_max_comp(i).topology,('reverse')))
+        N2_index=p1_max_comp(i).ave_max_index;
+        P2_index=p1_max_comp(i).ave_min_index;
+    else
+         P2_index=p1_max_comp(i).ave_max_index;
+        N2_index=p1_max_comp(i).ave_min_index;
+    end
+    p1_struct(i).p1_comp=get_p1_comp(ALLEEG(i),p1_max_comp(i).comp,N2_index,P2_index);
+    
+end
+
+N1_P1_matrix=[[ALLEEG.subnum]',str2num([ALLEEG.condition]'),[p1_struct.p1_comp]'];
+
+for  j=1:length(ALLEEG)
+    %%get ALLEEG index for each dataset in N1_P1_matrix
+%     temp_sub=find(([ALLEEG.subnum]==N1_P1_matrix(j,1)));
+%     temp_cond=find([ALLEEG.condition]==num2str(N1_P1_matrix(j,2)));
+%     i_index=ismember(temp_sub,temp_cond);
+    ii(j)=j;
+    EEG=ALLEEG(i);
+    
+    %%Define Comp of Interest in struct
+        p1_max_comp(j).comp=N1_P1_matrix(j,3);
+        p1_max_comp(j).subnum=ALLEEG(ii(j)).subnum;
+        p1_max_comp(j).condition=ALLEEG(ii(j)).condition;
+        
+        p1_max_comp(j).c3_index= find(strcmpi({ALLEEG(1,j).chanlocs.labels}.', 'C3'));
+         p1_max_comp(i).c3_mean=mean(EEG.data(p1_max_comp(j).c3_index,EEG.srate:EEG.srate*2,:),3);
+     
+        %%Get_comp_activity
+        %0s     : 1 S
+        p1_max_comp(j).mean_comp=mean(ALLEEG(ii(j)).icaact(p1_max_comp(j).comp,ALLEEG(ii(j)).srate:ALLEEG(ii(j)).srate*2,:),3); %Save the mean (max) component activation across all trial
+
+            if(ALLEEG(j).condition=='1'||ALLEEG(j).condition=='2')
+            check_start_time=1000;
+            check_end_time=2000;
+            else 
+                check_start_time=500;
+                check_end_time=1000;
+                
+            end
+            
+
+            [p1_max_comp(j).ave_max, p1_max_comp(j).ave_max_index]=max(p1_max_comp(j).mean_comp(check_start_time:check_end_time));    %get the max location of the average (n2 or p2)
+            [p1_max_comp(j).ave_min, p1_max_comp(j).ave_min_index]=min(p1_max_comp(j).mean_comp(check_start_time:check_end_time));    %get the min location of the average (n2 or p2)
+%subplot(4,1,1);
+                 %    figure;  hold on; plot(1:length(p1_max_comp(j).mean_comp), p1_max_comp(j).mean_comp); hold on; 
+              %   title([ALLEEG(ii(j)).subject ' trial ' num2str(ALLEEG(ii(j)).condition)]); 
+             %   subplot(3,1,3); hold on; pop_topoplot(ALLEEG(ii(j)), 0, p1_max_comp(j).comp, [ALLEEG(ii(j)).setname ' '  p1_max_comp(j).topology]); 
+                
+                %%Figure out if component is N2 or P2 "shape"
+
+                if(p1_max_comp(j).ave_max_index>p1_max_comp(j).ave_min_index) %check if max is after min, if yes, then matches N2P2 form.
+                    p1_max_comp(j).topology='normal';
+                else p1_max_comp(j).topology='reverse';
+                end
+
+                    %%----------------------------------------------------------------
+                    %_________________GET COMPONENT TRIAL ACTIVITY____________________
+                    time_max0=(p1_max_comp(j).ave_max_index-ALLEEG(ii(j)).srate*60/1000+ALLEEG(ii(j)).srate+check_start_time);
+                    time_max1=(p1_max_comp(j).ave_max_index+ALLEEG(ii(j)).srate*60/1000+ALLEEG(ii(j)).srate+check_start_time);
+                    time_min0=(p1_max_comp(j).ave_min_index-ALLEEG(ii(j)).srate*60/1000+ALLEEG(ii(j)).srate+check_start_time);
+                    time_min1=(p1_max_comp(j).ave_min_index+ALLEEG(ii(j)).srate*60/1000+ALLEEG(ii(j)).srate+check_start_time);
+
+                    for jj=1:ALLEEG(ii(j)).trials
+                        p1_max_comp(j).trial_max(jj)=rms(ALLEEG(ii(j)).icaact(p1_max_comp(j).comp,time_max0:time_max1,jj)); %get the RMS of the ica activation of each trial from 60 ms before n2 to 60 ms after n2
+                        %           max_comp(i).trial_max_index(j)=(max_comp(i).trial_max_index(j)-4000)/4; % index time in ms
+                        p1_max_comp(j).trial_min(jj) =rms(ALLEEG(ii(j)).icaact(p1_max_comp(j).comp,time_min0:time_min0,jj));  %get the RMS of the ica activation of each trial from 60 ms before p2 to 60 ms after n2
+                        %           max_comp(i).trial_min_index(j)=(max_comp(i).trial_min_index(j)-4000)/4;  % index time in ms
+                    end
+                    %_________________________________________________________________
+                        while(jj>20)            %MAKE SURE NO EXTRA TRIALS ARE INCLUDED>
+                            p1_max_comp(j).trial_max(jj)=[];
+                            p1_max_comp(j).trial_min(jj)=[];
+                            jj=jj-1;
+                        end
+    
+                            %%find the index of removed epochs from each dataset (to ignore these
+                            %%from NRS data)
+                            p1_max_comp(j).rejected_epochs=get_removed_epochs(ALLEEG(ii(j)));
+    
+    
+    
+    
+                            %%Check if the number of pre-edit trials is >21 (==22). If it is -
+                            %%ignore the last trial (of the component activation data).
+
+                            if((ALLEEG(ii(j)).trials+length(p1_max_comp(j).rejected_epochs))>21&&(isempty(find(p1_max_comp(j).rejected_epochs==22))))
+                                p1_max_comp(j).trial_max(end)=[];
+                                p1_max_comp(j).trial_min(end)=[];
+                            end
+    
+    
+    
+    
+                            %%Check for epoch "1"'s that likely don't correspond to a stimulus
+                            %%and remove them from the "remove list"
+
+                            indx=0;
+                            indx=find( p1_max_comp(j).rejected_epochs==1);
+                            if indx~=0
+                                p1_max_comp(j).rejected_epochs(indx)=[]; %remove the epoch corresponding to 1 from our considertion
+                                p1_max_comp(j).rejected_epochs = p1_max_comp(j).rejected_epochs -1;
+                            end
+    
+
+                    %%Make removed trials map correctly to pain ratings involved
+                    %%in correlation.
+                    % NRS_master_backup=NRS_master;
+                    nrs_trial_index=(str2num(ALLEEG(ii(j)).condition)-1)*19+ALLEEG(ii(j)).subnum;
+    
+    
+    try
+                    for k=1:length(p1_max_comp(j).rejected_epochs)
+                        if(p1_max_comp(j).rejected_epochs(k)<20) %only overwrite NRS value if it actually pertains to a stim (not a shutdown effect)
+                            NRS_master(nrs_trial_index,p1_max_comp(j).rejected_epochs(k)+2)=NaN;
+                        end
+                    end
+
+                    [nonans_row, nonans_col]=find(~isnan(NRS_master(nrs_trial_index,3:end)));
+                    
+    catch
+       warning('nrs_trial_index exceeds NRS_master index'); 
+    end
+    %%Get corrected (cor) means
+    if(strcmp(p1_max_comp(j).topology,'reverse'))
+        p1_max_comp(j).cor_mean=p1_max_comp(j).mean_comp*(-1);
+    else p1_max_comp(j).cor_mean=p1_max_comp(j).mean_comp;
+    end;
+    
+%     if(strcmp(p1_max_comp(j).topology,'reverse'))
+%         p1_max_comp(j).cor_mean=p1_max_comp(j).mean_comp*(-1);
+%     else p1_max_comp(j).cor_mean=p1_max_comp(j).mean_comp;
+%     end;
+%     
+    
+end
+
+cond1=find([ALLEEG.condition]=='1');
+cond2=find([ALLEEG.condition]=='2');
+cond3=find([ALLEEG.condition]=='3');
+cond4=find([ALLEEG.condition]=='4');
+
+mean1=mean(cat(1,p1_max_comp(cond1).cor_mean)); [~,cheps_n1_mindex]=min(mean1);[~,cheps_n1_maxdex]=max(mean1);
+mean2=mean(cat(1,p1_max_comp(cond2).cor_mean)); [~,cheps_n1_mindex_cap]=min(mean2);[~,cheps_n1_maxdex_cap]=max(mean2);
+mean3=mean(cat(1,p1_max_comp(cond3).cor_mean)); [~,leps_n1_mindex]=min(mean3); [~,leps_n1_maxdex]=max(mean3);
+mean4=mean(cat(1,p1_max_comp(cond4).cor_mean)); [~,leps_n1_mindex_cap]=min(mean4); [~,leps_n1_maxdex_cap]=max(mean4);
+
+cheps_n1_mindex=cheps_n1_mindex/4; cheps_n1_maxdex=cheps_n1_maxdex/4;
+cheps_n1_mindex_cap=cheps_n1_mindex_cap/4; cheps_n1_maxdex_cap=cheps_n1_maxdex_cap/4;
+leps_n1_mindex=leps_n1_mindex/4;   leps_n1_maxdex=leps_n1_maxdex/4;
+leps_n1_mindex_cap=leps_n1_mindex_cap/4;   leps_n1_maxdex_cap=leps_n1_maxdex_cap/4;
+
+c3_mean1=mean(cat(1,p1_max_comp(cond1).c3_mean)); [~,cheps_n1c3_mindex]=min(c3_mean1);[~,cheps_n1c3_maxdex]=max(c3_mean1);
+c3_mean2=mean(cat(1,p1_max_comp(cond2).c3_mean)); [~,cheps_n1c3_mindex_cap]=min(c3_mean2);[~,cheps_n1c3_maxdex_cap]=max(c3_mean2);
+c3_mean3=mean(cat(1,p1_max_comp(cond3).c3_mean)); [~,leps_n1c3_mindex]=min(c3_mean3);[~,leps_n1c3_maxdex]=max(c3_mean3);
+c3_mean4=mean(cat(1,p1_max_comp(cond4).c3_mean)); [~,leps_n1c3_mindex_cap]=min(c3_mean4);[~,leps_n1c3_maxdex_cap]=max(c3_mean4);
+
+cheps_n1c3_mindex=cheps_n1c3_mindex/4; cheps_n1c3_maxdex=cheps_n1c3_maxdex/4;
+cheps_n1c3_mindex_cap=cheps_n1c3_mindex_cap/4; cheps_n1c3_maxdex_cap=cheps_n1c3_maxdex_cap/4;
+leps_n1c3_mindex=leps_n1c3_mindex/4; leps_n1c3_maxdex=leps_n1c3_maxdex/4;
+leps_n1c3_mindex_cap=leps_n1c3_mindex_cap/4; leps_n1c3_maxdex_cap=leps_n1c3_maxdex_cap/4;
+
+
+
+x=0:0.25:1000;
+yline=20;
+
+figure; 
+
+ax1=subplot(2,2,1)
+plot(x,mean1); 
+hold on; plot(x,c3_mean1);
+
+title('CHEPs Placebo "N2P2" component mean');
+line([cheps_n1_mindex cheps_n1_mindex],[-yline yline], 'linestyle', ':'); line([cheps_n1_maxdex cheps_n1_maxdex],[-yline yline], 'linestyle', ':');
+line([cheps_n1c3_mindex cheps_n1c3_mindex],[-yline yline], 'linestyle', ':', 'Color', 'red'); line([cheps_n1c3_maxdex cheps_n1c3_maxdex],[-yline yline], 'linestyle', ':', 'Color', 'red');
+
+
+ax2=subplot(2,2,3) 
+plot(x,mean2);
+hold on; plot(x,c3_mean2);
+
+title('CHEPs Capsaicin "N2P2" component mean');
+line([cheps_n1_mindex cheps_n1_mindex],[-yline yline], 'linestyle', ':');line([cheps_n1_maxdex cheps_n1_maxdex],[-yline yline], 'linestyle', ':');
+line([cheps_n1c3_mindex_cap cheps_n1c3_mindex_cap],[-yline yline], 'linestyle', ':', 'Color', 'red'); line([cheps_n1c3_maxdex_cap cheps_n1c3_maxdex_cap],[-yline yline], 'linestyle', ':', 'Color', 'red');
+
+
+ax3=subplot(2,2,2) 
+plot(x,mean3);
+hold on; plot(x,c3_mean3);
+
+title('LEPs Placebo "N2P2" component mean');
+line([leps_n1_mindex leps_n1_mindex],[-yline yline], 'linestyle', ':'); line([leps_n1_maxdex leps_n1_maxdex],[-yline yline], 'linestyle', ':');
+line([leps_n1c3_mindex leps_n1c3_mindex],[-yline yline], 'linestyle', ':', 'Color', 'red'); line([leps_n1c3_maxdex leps_n1c3_maxdex],[-yline yline], 'linestyle', ':', 'Color', 'red');
+
+
+ax4=subplot(2,2,4) 
+plot(x,mean4);
+hold on; plot(x,c3_mean4);
+
+title('LEPs Capsaicin "N2P2" component mean');
+line([leps_n1_mindex leps_n1_mindex],[-yline yline], 'linestyle', ':'); line([leps_n1_maxdex leps_n1_maxdex],[-yline yline], 'linestyle', ':');
+line([leps_n1c3_mindex_cap leps_n1c3_mindex_cap],[-yline yline], 'linestyle', ':', 'Color', 'red'); line([leps_n1c3_maxdex_cap leps_n1c3_maxdex_cap],[-yline yline], 'linestyle', ':', 'Color', 'red');
+
+
+legend(ax1,{'N2P2 Component','CZ Electrode Activity','N2 Component Min', 'P2 Component Max','N2 CZ Min', 'P2 CZ Max'})
+linkaxes([ax3,ax1,ax2,ax4],'y')
+
+
+
+
+
+%ALLEEG=ALLEEG_mast; 
+for(i=1:length(ALLEEG_mast))
+%      nrs_trial_index=(str2num(ALLEEG(i).condition)-1)*19+max_comp(i).subnum; %-max_comp(i).trial_min(1:end)-max_comp(i).trial_min(1:20)
+%    [nonans_row, nonans_col]=find(~isnan(NRS_master(nrs_trial_index,3:end)));
+%    
+%    h=figure;
+%    %            Trial data should be good.                     Only take
+%    %             relevant NRS data  
+%    scatter(max_comp(i).trial_max(1:end),  NRS_master(nrs_trial_index,nonans_col(1:length(max_comp(i).trial_max)))); %(1:length(max_comp(i).trial_max))
+%    xlabel('Component activity by trial')
+%     ylabel('NRS')
+%    title_text= [[ALLEEG(i).subject '-' EEG.condition] ' Correlation between component ' num2str(max_comp(i).comp) ' activity and pain by trial'];
+%    title(title_text);
+%    lsline; 
+% %     
+    nrs_trial_index=(str2num(ALLEEG_mast(i).condition)-1)*19+p1_max_comp(i).subnum;
+    [nonans_row, nonans_col]=find(~isnan(NRS_master(nrs_trial_index,3:end)));
+    
+    
+
+%want to correlate with N2 
+try 
+    if(strcmp(p1_max_comp(i).topology,('reverse')))
+        p1_max_comp(i).N2_correlation_coefficients=corrcoef(p1_max_comp(i).trial_max(1:end), NRS_master(nrs_trial_index,nonans_col(1:length(p1_max_comp(i).trial_min))));
+        p1_max_comp(i).P2_correlation_coefficients=corrcoef(p1_max_comp(i).trial_min(1:end), NRS_master(nrs_trial_index,nonans_col(1:length(p1_max_comp(i).trial_max))));
+       disp('reverse');
+    else
+        p1_max_comp(i).P2_correlation_coefficients=corrcoef(p1_max_comp(i).trial_max(1:end), NRS_master(nrs_trial_index,nonans_col(1:length(p1_max_comp(i).trial_min))));
+        p1_max_comp(i).N2_correlation_coefficients=corrcoef(p1_max_comp(i).trial_min(1:end), NRS_master(nrs_trial_index,nonans_col(1:length(p1_max_comp(i).trial_max))));
+        disp('normal');
+    end
+    p1_max_comp(i).P2_correlation_coefficients=p1_max_comp(i).P2_correlation_coefficients(2,1);
+    p1_max_comp(i).N2_correlation_coefficients=p1_max_comp(i).N2_correlation_coefficients(2,1);
+catch 
+    warning('Probable dim mismatch between trial number and NRS number, assigning coefficient=NaN');
+      p1_max_comp(i).P2_correlation_coefficients=NaN;
+    p1_max_comp(i).N2_correlation_coefficients=NaN;
+end
+
+% P2_coefficient_array(i)=max_comp(i).correlation_coefficients;
+figure; pop_topoplot(ALLEEG_mast(i), 0, p1_max_comp(i).comp, [ALLEEG_mast(i).setname ' P1 '  p1_max_comp(i).topology]); 
+end
+
+
+
+%P2_coefficient_array=P2_coefficient_array'; 
+mean_N1_correlation=mean([p1_max_comp(i).N2_correlation_coefficients])
+mean_P1_correlation=mean([p1_max_comp(i).P2_correlation_coefficients])
+
+
+figure; boxplot([p1_max_comp.N2_correlation_coefficients],{p1_max_comp.subnum}); 
+figure; boxplot([p1_max_comp.P2_correlation_coefficients],{p1_max_comp.subnum});
+hold on; title('p1 Correlation coefficients with NRS by subject'); 
+hold on; ylabel('Correlation coefficient');
+hold on; xlabel('Subject Number');
+hold on; legend('n1 correlation Coefficients, mean:0.2022'); %,'P2 Correlation Coefficients, mean:0.025');
+
+
+
+

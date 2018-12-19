@@ -9,6 +9,9 @@
 % 7. Saves (overwrites) the files in the folder where they are located. 
 % Inputs: pathname - the directory location of the folder holding the .set
 % and .fdt files you want to process. Eg. 'Z:\19_Carson_Berry\EEG':
+    % type - the type of ICA you want to use: 
+    % eg. 'pca' - principal component analysis 
+    %     'ica' - 
 % Outputs: Saved files, topoplots. 
 % Files to be check manually for noise after processing and before ICA. 
 
@@ -39,7 +42,7 @@ filename_list=deblank(char(filename_cell_list));
           %eeg.nbchan-1 is the second last eeg channel, digi.
          
           %Runica
-          EEG = pop_runica(EEG, 'extended',1,'interupt','on');
+          EEG = pop_runica(EEG,'extended',1 ,'interupt','on');%'PCA',22,'extended', 1,
           EEG = eeg_checkset( EEG );
 %           
           %save
@@ -48,6 +51,8 @@ filename_list=deblank(char(filename_cell_list));
           
           [ALLEEG EEG] = eeg_store(ALLEEG, EEG, CURRENTSET);
           eeglab redraw;
+          
+       fprintf('\n\n\n %i percent done ICA-ing folder \n\n\n',k/length_filename(1)*100);   
           
       end
       

@@ -1,16 +1,6 @@
-%A script that uses EEGLAB's computational engine to process .set files.
+%A script that uses EEGLAB's computational engine to create dipoles from IC's.
 % Processing includes: 
-% 1. Importing Events from Digi
-% 2. Importing electrode Locations from file
-% 3. Filtering highpass (0.5 Hz), lowpass (40 Hz)
-% 4. Epoching based on events
-% 5. Rereferencing to average
-% 6. Displaying Topoplot of the epoch average for each electrode
-% 7. Saves (overwrites) the files in the folder where they are located. 
-% Inputs: pathname - the directory location of the folder holding the .set
-% and .fdt files you want to process. Eg. 'Z:\19_Carson_Berry\EEG':
-% Outputs: Saved files, topoplots. 
-% Files to be check manually for noise after processing and before ICA. 
+% 
 
 function dipole_folder(pathname)
 
@@ -23,9 +13,7 @@ filename_list=deblank(char(filename_cell_list));
       
       for k=1:length_filename(1)
           %subject = file_struct_list.name  %% this iterates over the elements of the cell array, one-by-one, setting the `filename` variable like a loop variable
-          
-          % save(debugging_variables);
-          
+                    
           filename=deblank(filename_list(k, :));
           [~,filename_text,~]= fileparts(strcat(pathname,'\',filename));
           
@@ -35,10 +23,10 @@ filename_list=deblank(char(filename_cell_list));
          
           EEG = eeg_checkset( EEG );
           EEG = pop_dipfit_settings( EEG, 'hdmfile','C:\\Program Files\\MATLAB\\R2015b\\toolbox\\eeglab14_1_1b\\plugins\\dipfit2.3\\standard_BESA\\standard_BESA.mat','coordformat','Spherical','mrifile','C:\\Program Files\\MATLAB\\R2015b\\toolbox\\eeglab14_1_1b\\plugins\\dipfit2.3\\standard_BESA\\avg152t1.mat','chanfile','C:\\Program Files\\MATLAB\\R2015b\\toolbox\\eeglab14_1_1b\\plugins\\dipfit2.3\\standard_BESA\\standard-10-5-cap385.elp','chansel',[1:EEG.nbchan] );
-          EEG = pop_multifit(EEG, [1:EEG.nbchan] ,'threshold',100,'dipplot','on','plotopt',{'normlen' 'on'});
+          EEG = pop_multifit(EEG, [1:size(EEG.icaweights,1)] ,'threshold',100,'dipplot','on','plotopt',{'normlen' 'on'});
           pop_dipplot( EEG,[1:EEG.nbchan] ,'mri','C:\\Program Files\\MATLAB\\R2015b\\toolbox\\eeglab14_1_1b\\plugins\\dipfit2.3\\standard_BESA\\avg152t1.mat','summary','on','num','on','projimg','on','projlines','on','normlen','on');
           % === History not supported for manual dipole fitting ===
-          pop_topoplot(EEG,0, [1:EEG.nbchan] ,EEG.setname,[5 6] ,1,'electrodes','on');
+         % pop_topoplot(EEG,0, [1:EEG.nbchan] ,EEG.setname,[5 6] ,1,'electrodes','on');
           
           
               
@@ -48,7 +36,9 @@ filename_list=deblank(char(filename_cell_list));
           [ALLEEG EEG] = eeg_store(ALLEEG, EEG, CURRENTSET);
           eeglab redraw;
           
+      fprintf('All done Processing %s!', filename_text);
+          
       end
       
-      fprintf('All done Processing!');
+      fprintf('All done Processing %s!', pathname);
 end
