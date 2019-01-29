@@ -1,7 +1,10 @@
+%%Compare the variance of the latency between the 4 CvL conditions. 
+
 %read peak data from file
 peaks=csvread('Z:\21_Iara_De_Schoenmacker\Final Code\CvL Amp_Latency.csv',1,1);
 
-%some 'magic' numbers from looking at the format of the file in excel. 
+%some 'magic' numbers from looking at the format of the file in excel. these represent the number of
+%columns that the start of each section are offset from 0 are. 
 leps3_offset=10;
 cheps2_offset=22;
 leps4_offset=32;

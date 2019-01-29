@@ -1,4 +1,4 @@
-%%make nice ERP plots of CZ, and contralateral (N1P1) electrode. 
+%%make nice ERP plots of CZ, and contralateral (N1P1) electrode for every single recording....
 
 %ALLEEG_mast
 %ALLEEG_Fz
@@ -313,7 +313,6 @@ end
     
     c_pl_index=intersect(process_c3_matched,cond1);
     mean_c3_pl_cheps=mean(C3_data(c_pl_index,:)); %mean data
-    mean_c3_pl_cheps_all=mean(C3_data(
     SEM_c3_pl=std(C3_data(c_pl_index,:))/sqrt(size(C3_data(c_pl_index,:),1));    %Standard Error
     CI95_pl=tinv([0.025 0.975],size(C3_data(c_pl_index,:),1)-1);                               %T-Score
     ERP_CI95_pl=bsxfun(@times, SEM_c3_pl,CI95_pl(:));  %Confidence Intervals 
@@ -341,14 +340,14 @@ end
     plot(x,upper_pl,'color','w'); 
     hold on; plot(x,lower_pl,'color','w'); 
     hold on;
-    %x2=[x,fliplr(x)]; inbetween=[upper_pl, fliplr(lower_pl)]; fill(x2,inbetween,'b','FaceAlpha',0.1,'EdgeColor','none'); %set colour blue, transparency 10%, and no edgecolour
+    x2=[x,fliplr(x)]; inbetween=[upper_pl, fliplr(lower_pl)]; fill(x2,inbetween,'b','FaceAlpha',0.1,'EdgeColor','none'); %set colour blue, transparency 10%, and no edgecolour
     hold on; title('CHEPS C3 Average ERP - Matched Subjects Only');
    
     hold on;
     plot(x,upper_cap,'color','w');
     hold on; plot(x,lower_cap,'color','w');
     hold on;
-   % x2=[x,fliplr(x)]; inbetween=[upper_cap, fliplr(lower_cap)]; fill(x2,inbetween,'r','FaceAlpha',0.1,'EdgeColor','none'); %set colour red, transparency 10%, and no edgecolour
+   x2=[x,fliplr(x)]; inbetween=[upper_cap, fliplr(lower_cap)]; fill(x2,inbetween,'r','FaceAlpha',0.1,'EdgeColor','none'); %set colour red, transparency 10%, and no edgecolour
     hold on; 
     legend({'CHEPS Placebo C3 Grand Average','CHEPS Capsaicin C3 Grand Average'})
     hold off;
@@ -383,14 +382,14 @@ end
     plot(x,upper_pl,'color','w');
     hold on; plot(x,lower_pl,'color','w'); 
     hold on;
-  %  x2=[x,fliplr(x)]; inbetween=[upper_pl, fliplr(lower_pl)]; fill(x2,inbetween,'b','FaceAlpha',0.1,'EdgeColor','none'); %set colour blue, transparency 10%, and no edgecolour
+   x2=[x,fliplr(x)]; inbetween=[upper_pl, fliplr(lower_pl)]; fill(x2,inbetween,'b','FaceAlpha',0.1,'EdgeColor','none'); %set colour blue, transparency 10%, and no edgecolour
     hold on; title('LEPS C3 Average ERP - Matched Subjects Only');
     
 
     plot(x,upper_cap,'color','w');
     hold on; plot(x,lower_cap,'color','w');
     hold on;
-  %  x2=[x,fliplr(x)]; inbetween=[upper_cap, fliplr(lower_cap)]; fill(x2,inbetween,'r','FaceAlpha',0.1,'EdgeColor','none'); %set colour red, transparency 10%, and no edgecolour
+   x2=[x,fliplr(x)]; inbetween=[upper_cap, fliplr(lower_cap)]; fill(x2,inbetween,'r','FaceAlpha',0.1,'EdgeColor','none'); %set colour red, transparency 10%, and no edgecolour
     hold on; 
     legend({'LEPS Placebo C3 Grand Average','LEPS Capsaicin C3 Grand Average'})
     hold off;
@@ -415,9 +414,12 @@ end
 %             -> select all channels 
 %             -> PLOT ERP (ALL SUBJECTS)
     
-    %need to plot scalp maps of these N1 and P1 subjects. 
-    for i=1:length(process_c3_matched)
-    figure; pop_topoplot(mean(ALLEEG.data,3),1,[cheps_p1_n1_lat,cheps_pl_p1_lat,cheps_pl_n3_lat,cheps_pl_P4_lat],'Not the average'); 
-    figure; timtopo(ALLEEG(process_c3_matched(i)).data, ALLEEG(process_c3_matched(i)).chanlocs,[-1000 1999.75 -50 50],[300,400])
-    end
-    
+
+
+            %need to plot scalp maps of these N1 and P1 subjects. 
+        %     for i=1:length(process_c3_matched)
+        %     figure; pop_topoplot(mean(ALLEEG.data,3),1,[cheps_p1_n1_lat,cheps_pl_p1_lat,cheps_pl_n3_lat,cheps_pl_P4_lat],'Not the average'); 
+        %     figure; timtopo(ALLEEG(process_c3_matched(i)).data, ALLEEG(process_c3_matched(i)).chanlocs,[-1000 1999.75 -50 50],[300,400])
+        %     end
+
+        timtopo(ALLEEG(process_c3_matched(i)).data, ALLEEG(process_c3_matched(i)).chanlocs,[-1000 1999.75 -50 50],[300,400])

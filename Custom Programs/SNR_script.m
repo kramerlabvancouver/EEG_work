@@ -1,7 +1,7 @@
 
 %% Get SNR of all files loaded up in EEGLAB
 %define Channel of interest 
-chan_name='C3';
+chan_name='CZ';
 for i=1:length(ALLEEG)
      
     SNR_s(i).name=ALLEEG(i).setname;
@@ -89,10 +89,44 @@ minline.Color='r';
 minline.LineStyle='--';
 ylabel('Signal to noise ratio (dB)')
 xlabel('Participant')
-title('C3 SNR by Participant');
+title([chan_name ' SNR by Participant']);
 legend({'LEPS+Placebo', 'CHEPS+Placebo','LEPS+Cap','CHEPS+Cap'}, 'Location', 'northeast');
 
 savefig(h,'SNR_participant');
 close(h);
+
+
+%%2way ANOVA to see if different between groups/factors
+%factors as columns, groups as rows
+%ie
+%     placebo  Capsaicin
+%     (1)   1   (2)
+%        ...              cheps
+%        20                  
+%     (3)   1     (4)           leps 
+%        ...
+%        20
+%
+
+SNR_t=SNR_s;
+%remove 8,9,16 for direct comparison 
+SNR_t(find([SNR_t.subnum]==8))=[];
+SNR_t(find([SNR_t.subnum]==9))=[];
+SNR_t(find([SNR_t.subnum]==16))=[];
+
+g3={SNR_t(find([SNR_t.condition]=='3')).snr}';
+g1={SNR_t(find([SNR_t.condition]=='1')).snr}';
+g4={SNR_t(find([SNR_t.condition]=='4')).snr}';
+g2={SNR_t(find([SNR_t.condition]=='2')).snr}';
+
+cheps=[g1 g2]; 
+leps= [g3 g4];
+
+snr_anova_table=cell2mat(vertcat(cheps,leps));
+number_of_participants=20-3;
+
+
+[~,~,stats]=anova2(snr_anova_table,number_of_participants);
+%not significant. 
 
 
